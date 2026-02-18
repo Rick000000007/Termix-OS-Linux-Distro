@@ -3,7 +3,7 @@ set -e
 
 clear
 echo "======================================"
-echo "   Termix OS - Linux Distro v1.0.0"
+echo "   Termix OS - Linux Distro v1.0.1"
 echo "   Installer by ravlav"
 echo "======================================"
 echo ""
