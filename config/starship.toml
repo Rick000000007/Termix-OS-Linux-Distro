@@ -1,0 +1,7 @@
+cat > config/starship.toml <<'EOF'
+add_newline = true
+
+[character]
+success_symbol = "❯"
+error_symbol = "❯"
+EOF
