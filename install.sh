@@ -1,79 +1,120 @@
-cat > install.sh <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
 clear
 echo "======================================"
-echo "   Termix OS - Linux Distro"
+echo "   Termix OS - Linux Distro v1.0.0"
 echo "   Installer by ravlav"
 echo "======================================"
 echo ""
 
-pkg update -y
-pkg upgrade -y || true
+step() {
+  echo ""
+  echo "[$1] $2"
+  echo "--------------------------------------"
+}
 
-pkg install -y curl wget git nano zip unzip htop termux-tools
+# ---------------------------
+# 1) Update Termux (SAFE)
+# ---------------------------
+step "1/7" "Updating Termux (safe mode)"
+pkg update -y
+
+echo "Note: Full upgrade is skipped for stability."
+echo "You can run later: pkg upgrade -y"
+
+# ---------------------------
+# 2) Install basic tools
+# ---------------------------
+step "2/7" "Installing basic tools"
+pkg install -y git curl wget nano unzip zip tar
+
+# ---------------------------
+# 3) Dev tools
+# ---------------------------
+step "3/7" "Installing Dev tools"
+pkg install -y python nodejs openjdk-17
+
+# ---------------------------
+# 4) Proot + proot-distro
+# ---------------------------
+step "4/7" "Installing proot + proot-distro"
+pkg install -y proot proot-distro
+
+# ---------------------------
+# 5) Shell Enhancements (FORCE ZSH)
+# ---------------------------
+step "5/7" "Installing Zsh + Starship + Forcing Zsh"
+pkg install -y zsh starship
+
+mkdir -p ~/.config
+if [ -f "$HOME/Termix-OS-Linux-Distro/config/starship.toml" ]; then
+  cp "$HOME/Termix-OS-Linux-Distro/config/starship.toml" ~/.config/starship.toml
+fi
+
+# Create clean zshrc (prevents prompt bugs)
+cat > ~/.zshrc <<'EOF'
+# Termix OS - Zsh config
+export PATH="$HOME/bin:$PATH"
+
+# Starship prompt
+eval "$(starship init zsh)"
+
+# Useful aliases
+alias ll="ls -la"
+alias cls="clear"
+EOF
+
+# Force ZSH now
+chsh -s zsh || true
 
 echo ""
-echo "[+] Installing Desktop (XFCE + Termux-X11)..."
+echo "Zsh is now set as default shell."
+echo "Restart Termux after install to fully apply it."
 
+# ---------------------------
+# 6) Install Termix Store
+# ---------------------------
+step "6/7" "Installing Termix Store"
+bash "$HOME/Termix-OS-Linux-Distro/termix-store.sh"
+
+# ---------------------------
+# 7) Install Termux-X11 + XFCE
+# ---------------------------
+step "7/7" "Installing Termux-X11 + XFCE Desktop"
 pkg install -y x11-repo || true
 pkg update -y
 
-# Termux-X11 package name fix
-pkg install -y termux-x11 xfce4 xfce4-session xfce4-terminal thunar dbus
+pkg install -y termux-x11-nightly xfce4 xfce4-session xfce4-terminal thunar
 
-echo ""
-echo "[+] Installing Termix Store..."
-
-if [ -f "$HOME/Termix-OS-Linux-Distro/termix-store.sh" ]; then
-  bash "$HOME/Termix-OS-Linux-Distro/termix-store.sh"
-else
-  echo "[!] termix-store.sh not found in:"
-  echo "    $HOME/Termix-OS-Linux-Distro/"
-  echo "    Skipping store install."
-fi
-
-echo ""
-echo "[+] Creating commands..."
+# ---------------------------
+# Create shortcuts
+# ---------------------------
+step "FINAL" "Creating shortcuts"
 mkdir -p ~/bin
 
-cat > ~/bin/termix-store <<'EOT'
+cat > ~/bin/termix-xfce <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-cd ~/termix-store
-./run.sh
-EOT
-
-cat > ~/bin/termix-xfce <<'EOT'
-#!/data/data/com.termux/files/usr/bin/bash
-export XDG_RUNTIME_DIR=$TMPDIR
+set -e
 export DISPLAY=:1
 
-# start dbus if not running
-if ! pgrep -x dbus-daemon >/dev/null 2>&1; then
-  dbus-daemon --session --fork >/dev/null 2>&1 || true
-fi
-
-# start x11 server
-termux-x11 :1 >/dev/null 2>&1 &
+termux-x11 :1 &
 sleep 2
-
 startxfce4
-EOT
-
-chmod +x ~/bin/termix-store ~/bin/termix-xfce
-
-if ! grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc 2>/dev/null; then
-  echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-fi
-
-echo ""
-echo "======================================"
-echo "DONE ✅"
-echo "Run store: termix-store"
-echo "Run XFCE : termix-xfce"
-echo "======================================"
-echo ""
 EOF
 
-chmod +x install.sh
+chmod +x ~/bin/termix-xfce
+
+# ---------------------------
+# Done
+# ---------------------------
+echo ""
+echo "======================================"
+echo "DONE ✅ Termix OS Installed!"
+echo "======================================"
+echo ""
+echo "Run Store : termix-store"
+echo "Run XFCE  : termix-xfce"
+echo ""
+echo "IMPORTANT: Restart Termux now."
+echo ""
