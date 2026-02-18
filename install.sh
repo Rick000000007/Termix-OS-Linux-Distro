@@ -42,23 +42,46 @@ step "4/7" "Installing proot + proot-distro"
 pkg install -y proot proot-distro
 
 # ---------------------------
-# 5) Shell Enhancements (FORCE ZSH)
+# 5) Shell Enhancements (FORCE ZSH + AUTOCOMPLETE)
 # ---------------------------
-step "5/7" "Installing Zsh + Starship + Forcing Zsh"
-pkg install -y zsh starship
+step "5/7" "Installing Zsh + Starship + Autocomplete + Suggestions"
+pkg install -y zsh starship zsh-completions
 
 mkdir -p ~/.config
 if [ -f "$HOME/Termix-OS-Linux-Distro/config/starship.toml" ]; then
   cp "$HOME/Termix-OS-Linux-Distro/config/starship.toml" ~/.config/starship.toml
 fi
 
-# Create clean zshrc (prevents prompt bugs)
+# Create plugin folder
+mkdir -p ~/.zsh/plugins
+
+# Install autosuggestions plugin
+if [ ! -d "$HOME/.zsh/plugins/zsh-autosuggestions" ]; then
+  git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.zsh/plugins/zsh-autosuggestions
+fi
+
+# Install syntax highlighting plugin
+if [ ! -d "$HOME/.zsh/plugins/zsh-syntax-highlighting" ]; then
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.zsh/plugins/zsh-syntax-highlighting
+fi
+
+# Write clean zshrc (prevents prompt bugs)
 cat > ~/.zshrc <<'EOF'
 # Termix OS - Zsh config
 export PATH="$HOME/bin:$PATH"
 
+# Autocomplete
+autoload -Uz compinit
+compinit
+
 # Starship prompt
 eval "$(starship init zsh)"
+
+# Autosuggestions
+source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# Syntax highlighting (must be last)
+source ~/.zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Useful aliases
 alias ll="ls -la"
@@ -70,8 +93,8 @@ chsh -s zsh || true
 
 echo ""
 echo "Zsh is now set as default shell."
+echo "Autocomplete + suggestions enabled."
 echo "Restart Termux after install to fully apply it."
-
 # ---------------------------
 # 6) Install Termix Store
 # ---------------------------
